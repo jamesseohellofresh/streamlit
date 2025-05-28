@@ -4,3 +4,4 @@ streamlit_js_eval
 bcrypt
 pyodbc
 Authlib
+databricks
