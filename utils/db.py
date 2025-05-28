@@ -15,7 +15,7 @@ def validate_login(email):
             cursor = conn.cursor()
             query = """
                 SELECT email FROM hive_metastore.anz_finance_app.users 
-                WHERE email = ? AND line_del = true
+                WHERE email = ? AND line_del = false
             """
             cursor.execute(query, (email,))
             result = cursor.fetchone()
