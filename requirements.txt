@@ -1,0 +1,6 @@
+streamlit_authenticator
+streamlit
+streamlit_js_eval
+bcrypt
+pyodbc
+Authlib
