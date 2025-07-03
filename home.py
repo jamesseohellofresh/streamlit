@@ -87,9 +87,6 @@ if "user_account" not in st.session_state:
         st.stop()
     else:
         st.session_state.user_account = check_login[0]
-        #st.session_state.domain_code = chosen["domain_code"]
-        #st.session_state.target_database = chosen["target_database"]
-        #save_domain_to_localstorage(chosen["domain_code"], chosen["target_database"])
         st.rerun()
 
 # 메인 UI
@@ -105,14 +102,15 @@ with col1:
     """, unsafe_allow_html=True)
 with col2:
     if st.button("🔓 Log out"):
+        st.session_state.clear()
         st.logout()
 
 st.markdown('<div style="margin-bottom: 42px;"></div>', unsafe_allow_html=True)
 # Navigation Buttons
 col1, col2, col3 = st.columns(3)
 with col1:
-    if st.button("Dashboard", key="dashboard_btn", use_container_width=True):
-        st.switch_page("pages/dashboard.py")
+    if st.button("Menu Planning", key="menu_planning_btn", use_container_width=True):
+        st.switch_page("pages/menuplanning.py")
 with col2:
     if st.button("Reports", key="reports_btn", use_container_width=True):
         st.switch_page("pages/reports.py")

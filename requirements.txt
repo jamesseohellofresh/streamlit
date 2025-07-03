@@ -6,3 +6,4 @@ pyodbc
 Authlib
 databricks
 databricks-sql-connector
+requests
