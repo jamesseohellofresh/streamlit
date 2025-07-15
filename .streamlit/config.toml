@@ -7,5 +7,5 @@ textColor = "#FFFFFF"
 font = "sans serif"
 base = "dark"
 
-[ui]
-hideSidebarNav = true       # ✅ 페이지 목록 숨기기
+#[ui]
+#hideSidebarNav = true       # ✅ 페이지 목록 숨기기

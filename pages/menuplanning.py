@@ -14,7 +14,7 @@ from utils.commonquery import (
 )
 
 from datetime import datetime,timedelta
-from streamlit_autorefresh import st_autorefresh
+##from streamlit_autorefresh import st_autorefresh
 
 # --- Page Config ---
 st.set_page_config(

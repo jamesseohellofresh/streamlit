@@ -41,7 +41,7 @@ def show_logo(margin_bottom="4rem"):
 # --- 1. 로그인 전: 안내/소개 페이지 ---
 if not st.user.is_logged_in:
     show_logo()
-    # 타이틀 및 설명
+    
     st.markdown(
         """
         <div style='display: flex; align-items: center; gap: 10px;'>
@@ -79,7 +79,7 @@ st.session_state.user_email = st.user.email
 st.session_state.user_name = st.user.name
 
 show_logo(margin_bottom="2rem")
-# 도메인 선택 (최초 1회)
+
 if "user_account" not in st.session_state:
     check_login = validate_login(st.user.email)
     if check_login is None:
@@ -89,7 +89,7 @@ if "user_account" not in st.session_state:
         st.session_state.user_account = check_login[0]
         st.rerun()
 
-# 메인 UI
+# Main UI
 col1, col2 = st.columns([7, 2])
 with col1:
     st.markdown(f"""
@@ -112,9 +112,20 @@ with col1:
     if st.button("Menu Planning", key="menu_planning_btn", use_container_width=True):
         st.switch_page("pages/menuplanning.py")
 with col2:
-    if st.button("Reports", key="reports_btn", use_container_width=True):
-        st.switch_page("pages/reports.py")
+    if st.button("Budget Recipe Composition", key="recipe_composition_btn", use_container_width=True):
+        st.switch_page("pages/budgetrecipecomposition.py")
 with col3:
+    if st.button("Order Recipe Margin", key="order_recipe_margin_btn", use_container_width=True):
+        st.switch_page("pages/orderrecipemargin.py")
+
+col4, col5, col6 = st.columns(3)
+with col4:
+    if st.button("Box Count", key="boxCount_btn", use_container_width=True):
+        st.switch_page("pages/boxcount.py")
+with col5:
+    if st.button("Kraken Ops", key="kraken_btn", use_container_width=True):
+        st.switch_page("pages/krakenOps.py")
+with col6:
     if st.button("Settings", key="settings_btn", use_container_width=True):
         st.switch_page("pages/settings.py")
 

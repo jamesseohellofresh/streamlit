@@ -7,3 +7,6 @@ Authlib
 databricks
 databricks-sql-connector
 requests
+pyspark
+openai
+streamlit_echarts
