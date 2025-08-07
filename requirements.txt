@@ -10,3 +10,6 @@ requests
 pyspark
 openai
 streamlit_echarts
+plotly
+streamlit-tile
+streamlit-cookies-manager

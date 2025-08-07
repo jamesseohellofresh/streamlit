@@ -4,17 +4,22 @@ import pandas as pd
 import requests
 import os
 import time
+import datetime
+import bcrypt
+import uuid
+import datetime
 
+DATABRICKS_HOST = st.secrets['databricks']['host']
+HTTP_PATH = st.secrets['databricks']['http_path']
+ACCESS_TOKEN = st.secrets['databricks']['token']
 
-DATABRICKS_HOST = st.secrets["databricks"]["host"]
-HTTP_PATH = st.secrets["databricks"]["http_path"]
-ACCESS_TOKEN = st.secrets["databricks"]["token"]
-
-os.environ["DATABRICKS_HOST"] = f"https://{st.secrets["databricks"]["host"]}"
-os.environ["DATABRICKS_TOKEN"] = st.secrets["databricks"]["token"]
+os.environ["DATABRICKS_HOST"] = f"https://{st.secrets['databricks']['host']}"
+os.environ["DATABRICKS_TOKEN"] = st.secrets['databricks']['token']
 
 # API endpoint
 apiurl = f"{os.environ['DATABRICKS_HOST']}/api/2.1/jobs/runs/submit"
+
+
 
 if "jobs" not in st.session_state:
     st.session_state.jobs = {} 
@@ -79,18 +84,21 @@ def get_connection():
         _verify_ssl="/Users/james.seo/Downloads/databricks_root.cer"
     )
 
-def validate_login(email):
+def validate_login(email, password):
     conn= get_connection()
     cursor = conn.cursor()
     query = """
-        SELECT email FROM hive_metastore.anz_finance_app.users 
+        SELECT password_hash FROM hive_metastore.anz_finance_app.users 
         WHERE email = ? AND line_del = false
     """
     cursor.execute(query, (email,))
     result = cursor.fetchone()
-    #print(f"Connection OK. Result: {result[0]}")
-    return result[0] if result else None
-            
+    conn.close()
+
+    if result:
+        stored_hash = result[0]
+        return bcrypt.checkpw(password.encode('utf-8'), stored_hash.encode('utf-8'))
+    return False
 
 
 # 데이터 쿼리 함수
@@ -219,3 +227,111 @@ def fetch_inventory_items():
     df = pd.read_sql(query, conn)
     conn.close()
     return df
+
+
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+def email_exists(email: str) -> bool:
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT 1
+        FROM hive_metastore.anz_finance_app.users
+        WHERE email = ? AND line_del = false
+        LIMIT 1
+    """, (email,))
+    result = cursor.fetchone()
+    conn.close()
+    return result is not None
+
+def register_user(email: str, password: str, department: str, entity_code: str):
+    conn = get_connection()
+    cursor = conn.cursor()
+    hashed_pw = hash_password(password)
+    cursor.execute(
+        """
+        INSERT INTO hive_metastore.anz_finance_app.users 
+        (email, password_hash, department, default_bob_entity_code, line_del)
+        VALUES (?, ?, ?, ?, false)
+        """,
+        (email, hashed_pw, department, entity_code)
+    )
+    conn.commit()
+    conn.close()
+
+
+def validate_login_from_db(email: str, password: str) -> bool:
+    conn = get_connection()
+    cursor = conn.cursor()
+    query = """
+        SELECT password_hash FROM hive_metastore.anz_finance_app.users 
+        WHERE email = ? AND line_del = false
+    """
+    cursor.execute(query, (email,))
+    result = cursor.fetchone()
+    conn.close()
+
+    if result:
+        stored_hash = result[0]
+        return bcrypt.checkpw(password.encode('utf-8'), stored_hash.encode('utf-8'))
+    return False
+
+
+def create_reset_token(email: str, token: str) -> str:
+    
+    expires_at = datetime.datetime.now(datetime.timezone.utc)+ datetime.timedelta(minutes=30)
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO hive_metastore.anz_finance_app.password_reset_tokens (email, token, expires_at, is_used)
+        VALUES (?, ?, ?, false)
+    """, (email, token, expires_at))
+    conn.commit()
+    conn.close()
+
+    return token
+
+def verify_reset_token(token: str) -> str | None:
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT email
+        FROM hive_metastore.anz_finance_app.password_reset_tokens
+        WHERE token = ? AND expires_at > current_timestamp() AND is_used = false
+        LIMIT 1
+    """, (token,))
+    result = cursor.fetchone()
+    conn.close()
+
+    if result:
+        return result[0]  # email
+    return None
+
+def mark_token_as_used(token: str):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE hive_metastore.anz_finance_app.password_reset_tokens
+        SET is_used = true
+        WHERE token = ?
+    """, (token,))
+    conn.commit()
+    conn.close()
+
+def reset_user_password(email: str, new_password: str, token: str):
+    hashed_pw = hash_password(new_password)
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE hive_metastore.anz_finance_app.users
+        SET password_hash = ?
+        WHERE email = ? AND line_del = false
+    """, (hashed_pw, email))
+    conn.commit()
+    conn.close()
+
+    # Mark token as used
+    mark_token_as_used(token)

@@ -1,13 +1,35 @@
 import streamlit as st
-import base64
+from streamlit_cookies_manager import EncryptedCookieManager
+import os
+import time
+import json
+import streamlit as st
+from streamlit_tile import streamlit_tile
 from utils.db import validate_login
 from streamlit_js_eval import streamlit_js_eval
+import time
+
+
+def show_logo(margin_bottom="1rem"):
+    col1, col2, col3 = st.columns([1, 4, 1])
+    with col2:
+        st.markdown(
+            f"""
+            <div style='text-align: center;'>
+                <div style="display: flex; align-items: center; justify-content: center;margin-bottom: {margin_bottom};">
+                    <img src='https://assets-us-01.kc-usercontent.com/7af951a6-2a13-004b-f0eb-a87382a5b2e7/d8ba1d2b-bd49-4f1f-a11f-9cb7935bd450/Hello%20Fresh.png?fm=png&auto=format&w=1024' width="150" style="margin-bottom: 4px;"/>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
 
 # --- Page Config ---
 st.set_page_config(
-    page_title="HelloFresh Finance Portal",
+    page_title="HelloFresh Finance BI Portal",
     page_icon=":bulb:",
-    layout="centered"
+    layout="wide"
 )
 
 # --- Custom Styles ---
@@ -20,113 +42,131 @@ def inject_styles():
 
 inject_styles()
 
-# --- Utility Functions ---
+
+# --- COOKIE MANAGER SETUP ---
+# Must be initialized with the same parameters on every page.
+cookies = EncryptedCookieManager(
+    prefix="hellofresh/finance/bi-portal",
+    password=os.environ.get("COOKIES_PASSWORD", "a_default_password_for_testing"),
+)
+
+if not cookies.ready():
+    st.stop()
+
+# --- AUTHENTICATION CHECK ---
+# If the user_email cookie is not set, redirect to the login page.
+if cookies.get("user_email") in [None, "{}", "null", ""]:
+    st.warning("🔒 You are not logged in. Redirecting to login page...")
+    time.sleep(1)
+    st.switch_page("pages/_login.py")
+    st.stop()
 
 
-def show_logo(margin_bottom="4rem"):
-    col1, col2, col3 = st.columns([1, 4, 1])
-    with col2:
-        st.markdown(
-            f"""
-            <div style='text-align: center;'>
-                <div style="display: flex; align-items: center; justify-content: center;margin-bottom: {margin_bottom};">
-                    <img src='https://assets-us-01.kc-usercontent.com/7af951a6-2a13-004b-f0eb-a87382a5b2e7/d8ba1d2b-bd49-4f1f-a11f-9cb7935bd450/Hello%20Fresh.png?fm=png&auto=format&w=1024' width="200" style="margin-bottom: 4px;"/>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+# Display user info and logout button in the sidebar
+# with st.sidebar:
+#     st.markdown(f"👤 Logged in as: **{cookies.get('user_name', 'Unknown User')}**")
+#     if st.button('🔓 Log out'):
+#         # ❗ Clear cookies explicitly
+#         cookies["user_email"] = json.dumps({})
+#         cookies["user_name"] = json.dumps({})
+#         cookies.save()
+#         # Small delay to ensure cookie propagation
+#         time.sleep(0.5)
+#         # Force rerun (redirect to login page via auth check)
+#         st.rerun()
 
 
-# --- 1. 로그인 전: 안내/소개 페이지 ---
-if not st.user.is_logged_in:
-    show_logo()
-    
-    st.markdown(
-        """
-        <div style='display: flex; align-items: center; gap: 10px;'>
-            <span style='font-size: 2.2em;'>💡</span>
-            <span style='font-size: 2.2em; font-weight: bold;'>Hellofresh Finance Portal</span>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-    st.write(
-    """
-        **Welcome to the Hellofresh Finance Portal!**
+show_logo(margin_bottom="1rem")
 
-        This portal is your secure gateway to powerful data analysis and visualization tools, available exclusively to authenticated users.
-
-        After logging in, you can:
-        - Explore and analyze a wide range of business data
-        - Access tailored reports and interactive dashboards
-        - Gain actionable insights to support your decision-making
-
-        All features are protected by robust authentication, ensuring your data remains safe and confidential.
-
-        """
-    )
-
-    col1, col2 = st.columns([1,1])
-    with col1:
-        st.markdown('<div style="margin-bottom: 32px;"></div>', unsafe_allow_html=True)
-        if st.button("🔐 Login With Google", key="login_btn", use_container_width=True):
-            user = st.login()
-        st.stop()
-
-
-st.session_state.user_email = st.user.email
-st.session_state.user_name = st.user.name
-
-show_logo(margin_bottom="2rem")
-
-if "user_account" not in st.session_state:
-    check_login = validate_login(st.user.email)
-    if check_login is None:
-        st.error("No service available for your account.")
-        st.stop()
-    else:
-        st.session_state.user_account = check_login[0]
-        st.rerun()
-
-# Main UI
-col1, col2 = st.columns([7, 2])
+col1, col2 = st.columns([10, 1])
 with col1:
     st.markdown(f"""
         <div style='text-align: left;'>
             <div style='font-size: 16px; color: grey; margin-bottom: 20px;'>
-                Account: <code>{st.session_state.user_email}</code> &nbsp;|&nbsp;
-                Domain: <b>{st.session_state.user_name}</b> &nbsp;
+                User : <code>{cookies.get('user_name', 'Unknown User')}</code> &nbsp;
             </div>
         </div>
     """, unsafe_allow_html=True)
 with col2:
     if st.button("🔓 Log out"):
-        st.session_state.clear()
-        st.logout()
+        # ❗ Clear cookies explicitly
+        cookies["user_email"] = json.dumps({})
+        cookies["user_name"] = json.dumps({})
+        cookies.save()
+        # Small delay to ensure cookie propagation
+        time.sleep(0.5)
+        # Force rerun (redirect to login page via auth check)
+        st.rerun()
+
+
 
 st.markdown('<div style="margin-bottom: 42px;"></div>', unsafe_allow_html=True)
 # Navigation Buttons
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4, col5, col6 = st.columns(6)
 with col1:
-    if st.button("Menu Planning", key="menu_planning_btn", use_container_width=True):
-        st.switch_page("pages/menuplanning.py")
-with col2:
-    if st.button("Budget Recipe Composition", key="recipe_composition_btn", use_container_width=True):
-        st.switch_page("pages/budgetrecipecomposition.py")
-with col3:
-    if st.button("Order Recipe Margin", key="order_recipe_margin_btn", use_container_width=True):
+    kraken_ops_btn_clicked = streamlit_tile(
+        title="Kraken Ops Insight",
+        description="",
+        color_theme="blue",
+        icon="",
+        #color_theme="black", 
+        height=180,
+
+    )
+    if kraken_ops_btn_clicked:
+        st.switch_page("pages/krakenops.py")
+
+with col2:       
+    order_recipe_margin_btn_clicked = streamlit_tile(
+        title="Order Recipe Margin",
+        description="",
+        color_theme="red",
+        icon="",
+        #color_theme="black", 
+        height=180,
+
+    )
+    if order_recipe_margin_btn_clicked:
         st.switch_page("pages/orderrecipemargin.py")
 
-col4, col5, col6 = st.columns(3)
-with col4:
-    if st.button("Box Count", key="boxCount_btn", use_container_width=True):
+with col3:
+    box_count_btn_clicked = streamlit_tile(
+        title="Box / Kit Count",
+        description="",
+        color_theme="yellow",
+        icon="",
+        #color_theme="black", 
+        height=180,
+
+    )
+    if box_count_btn_clicked:
         st.switch_page("pages/boxcount.py")
-with col5:
-    if st.button("Kraken Ops", key="kraken_btn", use_container_width=True):
-        st.switch_page("pages/krakenOps.py")
-with col6:
-    if st.button("Settings", key="settings_btn", use_container_width=True):
-        st.switch_page("pages/settings.py")
+
+with col4:
+    finance_tools_btn_clicked = streamlit_tile(
+        title="Finance Hub",
+        description="",
+        color_theme="green",
+        icon="",
+        #color_theme="black", 
+        height=180,
+
+    )
+
+# with col2:
+#     if st.button("Budget Recipe Composition", key="recipe_composition_btn", use_container_width=True):
+#         st.switch_page("pages/budgetrecipecomposition.py")
+
+# col4, col5, col6 = st.columns(3)
+# with col5:
+#     if st.button("Kraken Ops", key="kraken_btn", use_container_width=True):
+#         st.switch_page("pages/krakenops.py")
+# with col6:
+#     if st.button("COGS WBR", key="cogswbr_btn", use_container_width=True):
+#         st.switch_page("pages/cogswbr.py")
+
+# Create a simple tile
 
 
+# if menu_planning_btn_clicked:
+#     st.switch_page("pages/menuplanning.py")

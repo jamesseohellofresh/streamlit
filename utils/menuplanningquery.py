@@ -8,13 +8,12 @@ from utils.db import (
     get_connection
 )
 
-DATABRICKS_HOST = st.secrets["databricks"]["host"]
-HTTP_PATH = st.secrets["databricks"]["http_path"]
-ACCESS_TOKEN = st.secrets["databricks"]["token"]
+DATABRICKS_HOST = st.secrets['databricks']['host']
+HTTP_PATH = st.secrets['databricks']['http_path']
+ACCESS_TOKEN = st.secrets['databricks']['token']
 
-os.environ["DATABRICKS_HOST"] = f"https://{st.secrets["databricks"]["host"]}"
-os.environ["DATABRICKS_TOKEN"] = st.secrets["databricks"]["token"]
-
+os.environ["DATABRICKS_HOST"] = f"https://{st.secrets['databricks']['host']}"
+os.environ["DATABRICKS_TOKEN"] = st.secrets['databricks']['token']
 
 # API endpoint
 apiurl = f"{os.environ['DATABRICKS_HOST']}/api/2.1/jobs/runs/submit"

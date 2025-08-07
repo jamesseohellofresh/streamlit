@@ -8,7 +8,6 @@ from utils.db import (
     get_connection
 )
 
-
 def fetch_hellofresh_weeks():
     conn = get_connection()
     query = """
@@ -40,3 +39,4 @@ def format_number_auto(value):
         return f"${value / 1_000:.2f}K"
     else:
         return f"${value:,.0f}"
+    

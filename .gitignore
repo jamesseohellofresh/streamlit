@@ -2,3 +2,5 @@ databricks-env/
 .streamlit/secrets.toml
 *.env
 *.dylib
+.venv/
+utils/__pycache__/

@@ -38,8 +38,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-if not st.user.is_logged_in:
-    st.switch_page("home.py")
+# if not st.user.is_logged_in:
+#     st.switch_page("home.py")
 
 
 

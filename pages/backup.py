@@ -8,7 +8,8 @@ from utils.db import (
 from datetime import datetime,timedelta
 from streamlit_autorefresh import st_autorefresh
 
-st.set_page_config(page_title="📊 Dashboard", layout="wide")
+st.set_page_config(page_title="📊 Dashboard", layout="wide",
+    initial_sidebar_state="expanded")
 
 
 st.markdown("""
@@ -17,8 +18,8 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-if not st.user.is_logged_in:
-    st.switch_page("home.py")
+# if not st.user.is_logged_in:
+#     st.switch_page("home.py")
 
 
 

@@ -20,7 +20,8 @@ from datetime import datetime,timedelta
 st.set_page_config(
     page_title="HelloFresh Finance Portal",
     page_icon=":bulb:",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 @st.cache_data(show_spinner="Loading sales data...", persist=True)
@@ -43,8 +44,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-if not st.user.is_logged_in:
-    st.switch_page("home.py")
+# if not st.user.is_logged_in:
+#     st.switch_page("home.py")
 
 
 

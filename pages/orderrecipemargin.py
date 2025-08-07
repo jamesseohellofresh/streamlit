@@ -5,7 +5,8 @@ from openai import OpenAI
 import numpy as np
 
 from utils.orderrecipemarginquery import (
-    run_order_recipe_margin_raw
+    run_order_recipe_margin_raw,
+    run_incremental_revenue_raw
 )
 
 from utils.commonquery import (
@@ -21,7 +22,8 @@ from datetime import datetime,timedelta
 st.set_page_config(
     page_title="HelloFresh Finance Portal",
     page_icon=":bulb:",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 # --- Style ---
@@ -54,6 +56,13 @@ st.markdown("""
 def load_order_recipe_margin_raw_data(hellofresh_week_option,entity_option):
     return run_order_recipe_margin_raw(hellofresh_week_option,entity_option)
 
+
+@st.cache_data(show_spinner="Loading Incremental revenue data...", persist=False)
+def load_incremental_revenue_raw_data():
+    return run_incremental_revenue_raw()
+
+
+
 @st.cache_data(show_spinner=False)
 def get_hellofresh_weeks():
     df = fetch_hellofresh_weeks()
@@ -67,8 +76,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-if not st.user.is_logged_in:
-    st.switch_page("home.py")
+# if not st.user.is_logged_in:
+#     st.switch_page("home.py")
 
 
 
@@ -270,3 +279,23 @@ st.header("Raw Data...")
 with st.expander("🔍 View Filtered Raw Data"):
     st.dataframe(df_raw, use_container_width=True)
 
+
+st.header("Incremental..")
+df_incremental = load_incremental_revenue_raw_data()
+
+# Pivot table: weeks as columns
+if not df_incremental.empty:
+    pivot_df = df_incremental.pivot_table(
+        index=["country", "product_type", "recipe_slot","box_size"],
+        columns="hellofresh_week",
+        values="incremental_rev",
+        aggfunc="sum"
+    ).reset_index()
+
+    # Optional: flatten columns and round values
+    pivot_df.columns.name = None
+    pivot_df.iloc[:, 3:] = pivot_df.iloc[:, 3:].round(2)
+
+    st.dataframe(pivot_df, use_container_width=True)
+else:
+    st.info("No incremental revenue data available.")
